@@ -1,18 +1,24 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const authRoutes = require('./routes/auth-routes');
+const postRoutes = require('./routes/post-routes');
+const authMiddleware = require('./middlewares/auth-middleware');
+
 const app = express();
 
-// Middleware to parse JSON data from incoming requests
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(authMiddleware);
 
-// GET method for /path-of-url
-app.get('/path-of-url', (request, response) => {
-    console.log(request); // Receives request and logs it for debugging
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.log(err));
 
-    // Send a response to the client for GET request
-    response.send('This is a GET response');
-});
+// Routes
+app.use('/auth', authRoutes); // http://localhost:3000/auth/register or http://localhost:3000/auth/login
+app.use('/post', postRoutes); // http://localhost:3000/post/create
 
-// Start the Express server on port 3000
-app.listen(3000, () => {
-    console.log('Server is running at http://localhost:3000');
-});
+const PORT = process.env.PORT;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
