@@ -9,7 +9,7 @@ router.post('/create', async (req, res) => {
         const { title, content } = req.body;
         const userFronJwtSecret = req.userFronJwtSecret;
         const userId = userFronJwtSecret.userId;
-        
+
         // Check if the provided `authorId` exists in the User collection
         const user = await User.findById(userId);
         if (!user) {
@@ -26,6 +26,55 @@ router.post('/create', async (req, res) => {
         // Save to database
         await post.save();
         res.status(201).json({ message: "Post created successfully", post });
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// Get all posts
+router.get('/', async (req, res) => {
+    try {
+        const posts = await Post.find({ author: req.params.userId }).populate('author', '-password -__v'); // Get posts with author (user) details except password
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// Get All Posts for a Particular User
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const posts = await Post.find({ author: req.params.userId }).populate('author', '-password -__v'); // Get posts with author (user) details except password
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// Edit a Post
+router.patch('/:postId', async (req, res) => {
+    try {
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret.userId;
+        const post = await Post.findById(req.params.postId).populate('author', '-password -__v'); // Get posts with author (user) details except password
+        console.log(post,req.params);
+        
+        const postLinkedUserId = post.author._id.toString();
+        console.log(userId,postLinkedUserId);
+        
+        if (userId != postLinkedUserId) {
+            return res.status(404).json({ error: "Unauthorised" });
+        }
+        const updatedPost = await Post.findByIdAndUpdate(
+            req.params.postId, // Finds the document by its `_id`
+            req.body, // Updates only the provided fields, leaving others unchanged
+            {
+                new: true, // `new: true` returns the updated document
+                runValidators: true // `runValidators: true` enforces schema validation
+            }
+        );
+        res.json({ message: 'User updated successfully', updatedUser: updatedPost });
+
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }

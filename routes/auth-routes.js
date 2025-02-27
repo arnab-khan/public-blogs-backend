@@ -15,20 +15,19 @@ console.log(JWT_SECRET);
 router.post('/register', async (req, res) => {
     try {
         const body = req.body
-        console.log('register body', body);
-        const { userName, password } = body;
-        const user = new User({ userName, password });
-        console.log('user', user);
-
+        // console.log('register body', body);
+        const { userName, password, name } = body;
+        const user = new User({ userName, password, name });
         await user.save();
-        res.status(201).json({ message: 'User registered' });
+        const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
+        res.status(201).json({ message: 'User registered', token, _id: user._id, userName: user.userName, name: user.name });
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message }); // Handle errors
     }
 });
 
 // Login User
-router.post('/login', async (req, res) => {    
+router.post('/login', async (req, res) => {
     try {
         const { userName, password } = req.body;
         const user = await User.findOne({ userName });
@@ -36,7 +35,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
-        res.json({ message: 'Login successful', token });
+        res.json({ message: 'Login successful', token, _id: user._id, userName: user.userName, name: user.name });
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message }); // Handle errors
     }

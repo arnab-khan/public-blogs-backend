@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        maxlength: 50,
+        match: /^[a-zA-Z\s]+$/ // Only letters and spaces allowed
+    },
     userName: {
         type: String,
         required: true,
