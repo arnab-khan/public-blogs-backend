@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env MONGO_URI=\"mongodb://127.0.0.1:27017/public-blogs\" PORT=3000 nodemon index.js",
+    "start": "cross-env MONGO_URI=\"mongodb://127.0.0.1:27017/public-blogs\" PORT=3000 JWT_SECRET=fb276c2f55b8a36de nodemon index.js",
     "production-start": "cross-env MONGO_URI=\"mongodb://127.0.0.1:27017/public-blogs\" PORT=3000 nodemon index.js"
   },
   "keywords": [],

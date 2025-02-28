@@ -41,4 +41,25 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Check if username is available
+router.get('/check-username', async (req, res) => {
+    try {
+        const { userName } = req.query; // Get username from query params
+        if (!userName) {
+            return res.status(400).json({ message: 'userName is required as params' });
+        }
+
+        // Check if the username already exists
+        const existingUser = await User.findOne({ userName });
+
+        if (existingUser) {
+            return res.status(409).json({ available: false, message: 'Username is already taken' });
+        }
+
+        res.status(200).json({ available: true, message: 'Username is available' });
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
 module.exports = router;
