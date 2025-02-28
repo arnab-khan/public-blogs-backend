@@ -34,7 +34,7 @@ router.post('/create', async (req, res) => {
 // Get all posts
 router.get('/', async (req, res) => {
     try {
-        const posts = await Post.find({ author: req.params.userId }).populate('author', '-password -__v'); // Get posts with author (user) details except password
+        const posts = await Post.find().populate('author', '-password -__v'); // Get posts with author (user) details except password
         res.json(posts);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
