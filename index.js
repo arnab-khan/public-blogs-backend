@@ -3,8 +3,30 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth-routes');
 const postRoutes = require('./routes/post-routes');
 const authMiddleware = require('./middlewares/auth-middleware');
-
+const cors = require('cors');
 const app = express();
+
+const allowedOrigins = [
+    'https://public-blogs.arnabkhan.in',
+];
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow no origin (like curl or Postman)
+        if (!origin) return callback(null, true);
+
+        // Allow all localhost:* and public-blogs domain
+        if (
+            /^http:\/\/localhost:\d+$/.test(origin) ||
+            allowedOrigins.includes(origin)
+        ) {
+            return callback(null, true);
+        }
+
+        // Otherwise, block
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true // optional, only if you're using cookies or Authorization headers
+}));
 
 // Middleware
 app.use(express.json());

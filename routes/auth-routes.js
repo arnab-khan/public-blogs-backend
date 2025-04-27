@@ -3,13 +3,13 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const config = require('../config');
+const Utils=require('../utils');
 
 const router = express.Router();
 
 const JWT_SECRET = config.JWT_SECRET;
 
-console.log(JWT_SECRET);
-
+const utils = new Utils();
 
 // Register User
 router.post('/register', async (req, res) => {
@@ -20,7 +20,9 @@ router.post('/register', async (req, res) => {
         const user = new User({ userName, password, name });
         await user.save();
         const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
-        res.status(201).json({ message: 'User registered', token, _id: user._id, userName: user.userName, name: user.name });
+        const userWithoutPassword = { ...user._doc };
+        delete userWithoutPassword.password;
+        res.status(201).json({ token, user: userWithoutPassword });
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message }); // Handle errors
     }
@@ -35,7 +37,9 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
-        res.json({ message: 'Login successful', token, _id: user._id, userName: user.userName, name: user.name });
+        const userWithoutPassword = { ...user._doc };
+        delete userWithoutPassword.password;
+        res.status(200).json({ token, user: userWithoutPassword });
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message }); // Handle errors
     }
@@ -53,10 +57,25 @@ router.get('/check-username', async (req, res) => {
         const existingUser = await User.findOne({ userName });
 
         if (existingUser) {
-            return res.status(409).json({ available: false, message: 'Username is already taken' });
+            return res.status(200).json({ available: false, message: 'Username is already taken' });
         }
 
         res.status(200).json({ available: true, message: 'Username is available' });
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// get user
+router.get('/user', async (req, res) => {
+    try {
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+        const user = await User.findById(userId).select('-password -__v'); // Get user details except password
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json(user);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }
