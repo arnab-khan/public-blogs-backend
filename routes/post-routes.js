@@ -25,7 +25,7 @@ router.post('/create', async (req, res) => {
 
         // Save to database
         await post.save();
-        res.status(201).json({ message: "Post created successfully", post });
+        res.status(201).json(post);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }
@@ -34,7 +34,7 @@ router.post('/create', async (req, res) => {
 // Get all posts
 router.get('/', async (req, res) => {
     try {
-        const posts = await Post.find().populate('author', '-password -__v'); // Get posts with author (user) details except password
+        const posts = await Post.find().sort({ createdAt: -1 }).populate('author', '-password -__v'); // Get posts with author (user) details except password, sorted by creation date (newest first)
         res.json(posts);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
@@ -73,8 +73,43 @@ router.patch('/:postId', async (req, res) => {
                 runValidators: true // `runValidators: true` enforces schema validation
             }
         );
-        res.json({ message: 'Post updated successfully', updatedUser: updatedPost });
+        res.json(updatedPost);
 
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// add like to a post
+router.patch('/:postId/like', async (req, res) => {
+    try {
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        console.log(post.likes, userId);
+        
+        if (post.likes.some(like => like.user.toString() === userId)) {
+            return res.status(400).json({ error: 'Already liked' });
+        }
+        post.likes.push({ user: userId, likedAt: new Date() });
+        await post.save();
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// get like list
+router.get('/:postId/likes', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.postId).populate('likes.user', '-password -__v'); // Populate basic fields of liked users
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        res.json(post.likes);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }
