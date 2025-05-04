@@ -34,7 +34,45 @@ router.post('/create', async (req, res) => {
 // Get all posts
 router.get('/', async (req, res) => {
     try {
-        const posts = await Post.find().sort({ createdAt: -1 }).populate('author', '-password -__v'); // Get posts with author (user) details except password, sorted by creation date (newest first)
+        const posts = await Post.aggregate([
+            {
+                $lookup: { // Join with User collection to get author details. `$lookup` is used to perform a left outer join to the User collection. It adds a new array field 'author' to the output documents containing the matching documents from the User collection.
+                    from: 'users', // Collection name for User
+                    localField: 'author', // Field from the Post collection
+                    foreignField: '_id', // Field from the User collection
+                    as: 'author' // Name of the new array field to add to the output documents
+                }
+            },
+            {
+                $unwind: '$author' // In MongoDB, `$unwind` is an aggregation stage used to deconstruct an array field from the input documents into multiple output documents, one for each element of the array. Essentially, it "flattens" an array field so that each element becomes a separate document.
+            },
+            {
+                $addFields: { // Add new fields to the documents. `$addFields` is used to add new fields to the documents in the pipeline.
+                    totalComments: { $size: { $ifNull: ['$comments', []] } }, // Calculate the total number of comments. `$size` returns the size of an array. `$ifNull` is used to return an empty array if the `comments` field is null or undefined.
+                    likes: { // Extract the user IDs of the likes. `$map` is used to apply a transformation to each element in an array. It creates a new array by applying the specified expression to each element of the input array.
+                        $map: { // Iterate over the likes array to extract user IDs
+                            input: { $ifNull: ['$likes', []] }, // If `likes` is null, use an empty array
+                            as: 'like', // Name of the variable for each element in the input array
+                            in: '$$like.user' // Extract the user ID from each `like` object
+                        }
+                    }
+                }
+            },
+            {
+                $project: { // Specify the fields to include in the output documents. 1 means include, 0 means exclude.
+                    _id: 1,
+                    title: 1,
+                    content: 1,
+                    createdAt: 1,
+                    author: { _id: 1, userName: 1, name: 1 }, // Include only specific fields from the author
+                    totalComments: 1, // Include the totalComments field from $addFields stage
+                    likes: 1, // Include the likes array from $addFields stage
+                }
+            },
+            {
+                $sort: { createdAt: -1 } // Sort by creation date in descending order
+            }
+        ]);
         res.json(posts);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
@@ -89,14 +127,14 @@ router.patch('/:postId/like', async (req, res) => {
         if (!post) {
             return res.status(404).json({ error: "Post not found" });
         }
-        console.log(post.likes, userId);
-        
-        if (post.likes.some(like => like.user.toString() === userId)) {
-            return res.status(400).json({ error: 'Already liked' });
+        if (post.likes.some(like => like?.user?.toString() === userId)) { // Check if the user already liked the post
+            post.likes = post.likes.filter(like => like.user.toString() !== userId); // Remove the like if it exists
+            await post.save();
+            return res.status(200).json(post.likes);
         }
-        post.likes.push({ user: userId, likedAt: new Date() });
+        post.likes.push({ user: userId, likedAt: new Date() }); // Add the like
         await post.save();
-        res.json(post);
+        res.json(post.likes);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }
@@ -110,6 +148,37 @@ router.get('/:postId/likes', async (req, res) => {
             return res.status(404).json({ error: "Post not found" });
         }
         res.json(post.likes);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// add comment to a post
+router.post('/:postId/comment', async (req, res) => {
+    try {
+        const { content } = req.body;
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        post.comments.push({ user: userId, content, commentedAt: new Date() }); // Add the comment
+        await post.save();
+        res.json(post.comments);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// get comment list
+router.get('/:postId/comments', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.postId).populate('comments.user', '-password -__v'); // Populate basic fields of commented users
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        res.json(post.comments);
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }

@@ -8,7 +8,12 @@ const PostSchema = new mongoose.Schema({
     likes: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Reference to the User who liked the post
         likedAt: { type: Date, default: Date.now } // Timestamp of when the post was liked
-    }]
+    }],
+    comments: [{
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Reference to the User who commented
+        content: { type: String, required: true }, // The comment content
+        commentedAt: { type: Date, default: Date.now } // Timestamp of when the comment was made
+    }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Post', PostSchema);
