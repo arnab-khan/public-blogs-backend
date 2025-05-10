@@ -14,7 +14,7 @@ const authMiddleware = (req, res, next) => {
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
-            console.log('Invalid or expired token.');
+            // console.log('Invalid or expired token.');
             
             // return res.status(403).json({ message: "Invalid or expired token." });
         }

@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const config = require('../config');
-const Utils=require('../utils');
+const Utils = require('../utils');
 
 const router = express.Router();
 
@@ -16,8 +16,8 @@ router.post('/register', async (req, res) => {
     try {
         const body = req.body
         // console.log('register body', body);
-        const { userName, password, name } = body;
-        const user = new User({ userName, password, name });
+        const { userName, password, name, profilePicture } = body;
+        const user = new User({ userName, password, name, profilePicture });
         await user.save();
         const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
         const userWithoutPassword = { ...user._doc };

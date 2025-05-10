@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
                     title: 1,
                     content: 1,
                     createdAt: 1,
-                    author: { _id: 1, userName: 1, name: 1 }, // Include only specific fields from the author
+                    author: { _id: 1, userName: 1, name: 1, profilePicture: 1 }, // Include only specific fields from the author
                     totalComments: 1, // Include the totalComments field from $addFields stage
                     likes: 1, // Include the likes array from $addFields stage
                 }
