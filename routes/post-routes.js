@@ -118,6 +118,23 @@ router.patch('/:postId', async (req, res) => {
     }
 });
 
+// delte a post
+router.delete('/:postId', async (req, res) => {
+    try {
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+        const post = await Post.findById(req.params.postId);
+        const postLinkedUserId = post.author.toString();
+        if (userId != postLinkedUserId) {
+            return res.status(404).json({ error: "Unauthorised" });
+        }
+        await Post.findByIdAndDelete(req.params.postId);
+        res.json({ message: 'Post deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
 // add like to a post
 router.patch('/:postId/like', async (req, res) => {
     try {

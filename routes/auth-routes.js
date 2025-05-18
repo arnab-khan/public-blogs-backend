@@ -3,13 +3,10 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const config = require('../config');
-const Utils = require('../utils');
 
 const router = express.Router();
 
 const JWT_SECRET = config.JWT_SECRET;
-
-const utils = new Utils();
 
 // Register User
 router.post('/register', async (req, res) => {
@@ -76,6 +73,29 @@ router.get('/user', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// edit user
+router.patch('/user', async (req, res) => {
+    try {
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+
+        const user = await User.findByIdAndUpdate( // Only update allowed fields
+            userId,
+            { $set: req.body },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET);
+        res.status(200).json({ token, user });
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }
