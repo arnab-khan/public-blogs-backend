@@ -144,8 +144,8 @@ router.patch('/:postId/like', async (req, res) => {
         if (!post) {
             return res.status(404).json({ error: "Post not found" });
         }
-        if (post.likes.some(like => like?.user?.toString() === userId)) { // Check if the user already liked the post
-            post.likes = post.likes.filter(like => like.user.toString() !== userId); // Remove the like if it exists
+        if (post.likes.some(like => like?.user?.toString() === userId)) { // Check if the user already liked the post            
+            post.likes = post.likes.filter(like => like?.user?.toString() !== userId); // Remove the like if it exists
             await post.save();
             return res.status(200).json(post.likes);
         }
