@@ -201,4 +201,53 @@ router.get('/:postId/comments', async (req, res) => {
     }
 });
 
+// edit comment
+router.patch('/:postId/comment/:commentId', async (req, res) => {
+    try {
+        const { content } = req.body;
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        const comment = post.comments.id(req.params.commentId);
+        if (!comment) {
+            return res.status(404).json({ error: "Comment not found" });
+        }
+        if (comment.user.toString() !== userId) {
+            return res.status(403).json({ error: "Unauthorised" });
+        }
+        comment.content = content;
+        await post.save();
+        res.json(post.comments);
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
+// delete comment
+router.delete('/:postId/comment/:commentId', async (req, res) => {
+    try {
+        const userFronJwtSecret = req.userFronJwtSecret;
+        const userId = userFronJwtSecret?.userId;
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+        const comment = post.comments.id(req.params.commentId);
+        if (!comment) {
+            return res.status(404).json({ error: "Comment not found" });
+        }
+        if (comment.user.toString() !== userId) {
+            return res.status(403).json({ error: "Unauthorised" });
+        }
+        comment.deleteOne();
+        await post.save();
+        res.json({ message: 'Comment deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.name, message: error.message });
+    }
+});
+
 module.exports = router;
