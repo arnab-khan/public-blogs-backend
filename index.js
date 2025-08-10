@@ -6,12 +6,12 @@ const authMiddleware = require('./middlewares/auth-middleware');
 const cors = require('cors');
 const app = express();
 
-const allowedOrigins = [
+const allowedOrigins = [ // Allowed origins list
     'https://public-blogs.arnabkhan.in',
 ];
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow no origin (like curl or Postman)
+        // Allow no origin (like Postman)
         if (!origin) return callback(null, true);
 
         // Allow all localhost:* and public-blogs domain
@@ -29,9 +29,9 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(authMiddleware);
+app.use(express.json()); // Parses incoming requests with JSON payloads
+app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded form data (from HTML forms)
+app.use(authMiddleware); // Runs authentication logic for every request after body parsing
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
