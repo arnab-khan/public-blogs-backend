@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
                 $sort: { createdAt: -1 } // Sort by creation date in descending order
             },
             {
-                $skip: (page - 1) * itemsPerPage
+                $skip: (page - 1) * itemsPerPage // Skip documents for pagination (based on the current page and items per page)
             },
             {
                 $limit: itemsPerPage

@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minlength: 6,
         maxlength: 20,
-        match: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$/ // No spaces, at least one letter and one number
+        match: /^(?=.*[A-Za-z])(?=.*\d)[^\s]+$/ // No spaces, at least one letter and one number
     },
     isAdmin: {
         type: Boolean,
