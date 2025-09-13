@@ -34,6 +34,9 @@ router.post('/create', async (req, res) => {
 // Get all posts
 router.get('/', async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const itemsPerPage = parseInt(req.query.itemsPerPage) || 10;
+
         const posts = await Post.aggregate([
             {
                 $lookup: { // Join with User collection to get author details. `$lookup` is used to perform a left outer join to the User collection. It adds a new array field 'author' to the output documents containing the matching documents from the User collection.
@@ -71,9 +74,25 @@ router.get('/', async (req, res) => {
             },
             {
                 $sort: { createdAt: -1 } // Sort by creation date in descending order
+            },
+            {
+                $limit: itemsPerPage
             }
         ]);
-        res.json(posts);
+
+        const totalPosts = await Post.countDocuments();
+        const totalPages = Math.ceil(totalPosts / itemsPerPage);
+
+        res.json({
+            posts,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalPosts,
+                hasNext: page < totalPages,
+                hasPrev: page > 1
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: error.name, message: error.message });
     }

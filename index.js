@@ -7,6 +7,7 @@ const cors = require('cors');
 const app = express();
 
 const allowedOrigins = [ // Allowed origins list
+    'http://public-blogs.arnabkhan.in',
     'https://public-blogs.arnabkhan.in',
 ];
 app.use(cors({
